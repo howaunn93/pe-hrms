@@ -472,13 +472,9 @@ class UserController extends Controller
     {
         $user = User::findByUuid($uuid, true, false);
         
-        $user->update([
-            'is_active' => $request->is_active,
-            'updated_by' => self::auth()->uuid,
-            'updated_at' => self::currentDateTime(),
-        ]);
+        $user->delete();
         
-        return self::response(new UserResource($user));
+        return self::response(null);
     }
 
     public function show(UserShowRequest $request, string $uuid)

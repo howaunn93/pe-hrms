@@ -223,6 +223,19 @@ class UserFilter
             });
         }
 
+        if ($filters->has('certificate_permanent') && $filters->certificate_permanent)
+        {
+            $data->whereHas('certificates', function($query) {
+                $query->whereNull('valid_until');
+            });
+        }
+        else if ($filters->has('certificate_valid_until') && !empty($filters->certificate_valid_until))
+        {
+            $data->whereHas('certificates', function($query) use ($filters) {
+                $query->whereDate('valid_until', '<=', $filters->certificate_valid_until);
+            });
+        }
+
         if ($filters->has('search_words') && !empty($filters->search_words))
         {
             $data->where(function($query) use ($filters) {

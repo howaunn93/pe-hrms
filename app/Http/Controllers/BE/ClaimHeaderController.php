@@ -574,7 +574,7 @@ class ClaimHeaderController extends Controller
             'footer_message' => 'Please log in to PE Portal to view the claim application.',
             'claim_header' => $claim_header,
             'claim_items' => $claim_header->claimItems()->get(),
-            'total_amount' => $claim_header->total_amount,
+            'total_amount' => $claim_header->claimItems()->where('director_approved', StatusCodeConstants::ACTIVE)->sum('amount'),
             'show_item_status' => true,
             'is_applicant_notification' => true,
         ];

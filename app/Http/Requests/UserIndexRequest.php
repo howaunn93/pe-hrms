@@ -47,6 +47,8 @@ class UserIndexRequest extends FormRequest
             'joined_date_to' => ['nullable', 'date'],
             'payroll_month' => ['nullable', 'integer', 'min:1', 'max:12'],
             'payroll_year' => ['nullable', 'integer', 'min:2020', 'max:2100'],
+            'certificate_permanent' => ['nullable', 'boolean'],
+            'certificate_valid_until' => ['nullable', 'date'],
             'search_words' => ['nullable', 'array'],
             'search_words.*' => ['nullable', 'string', 'regex:' . RegexConstants::DYNAMIC_SEARCH_INJECTION_PROTECTED],
             'page' => ['nullable', 'integer', 'min:1'],
