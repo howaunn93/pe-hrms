@@ -100,12 +100,16 @@ class LeaveRequestController extends Controller
         $is_handover_required = $leave_policy?->is_handover_required == StatusCodeConstants::ACTIVE && $request->total_days >= ($leave_policy->handover_min_days ?? 0);
         $start_date = collect($request->request_dates)->min('date');
         $last_date = collect($request->request_dates)->max('date');
+        $last_request_date = collect($request->request_dates)->sortBy('date')->last();
+        $is_resume_same_day_first_half = Carbon::parse($request->resume_date)->startOfDay()->eq(Carbon::parse($last_date)->startOfDay())
+            && isset($last_request_date['is_half_day']) && $last_request_date['is_half_day']
+            && isset($last_request_date['is_first_half']) && $last_request_date['is_first_half'];
         $notice_days = self::currentDateTime()->startOfDay()->diffInDays(Carbon::parse($start_date)->startOfDay(), false);
 
         throw_if($leave_entitlement->user_id != $user->id, AppException::class, 'Invalid leave entitlement');
         throw_if($this->availableLeaveDays($leave_entitlement) < $request->total_days, AppException::class, 'Insufficient leave balance');
         throw_if($notice_days < ($leave_policy->min_notice_days ?? 0), AppException::class, 'Minimum notice days is not fulfilled');
-        throw_if(Carbon::parse($request->resume_date)->startOfDay()->lte(Carbon::parse($last_date)->startOfDay()), AppException::class, 'Resume date must be after the last leave date');
+        throw_if(Carbon::parse($request->resume_date)->startOfDay()->lte(Carbon::parse($last_date)->startOfDay()) && !$is_resume_same_day_first_half, AppException::class, 'Resume date must be after the last leave date');
         throw_if($is_handover_required && !$request->handover_by_uuid, AppException::class, 'Handover is required');
         throw_if($leave_policy->requires_attachment == StatusCodeConstants::ACTIVE && !$request->hasFile('attachment'), AppException::class, 'Attachment is required');
 
