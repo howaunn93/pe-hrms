@@ -109,7 +109,7 @@ class LeaveRequestController extends Controller
         throw_if($leave_entitlement->user_id != $user->id, AppException::class, 'Invalid leave entitlement');
         throw_if($this->availableLeaveDays($leave_entitlement) < $request->total_days, AppException::class, 'Insufficient leave balance');
         throw_if($notice_days < ($leave_policy->min_notice_days ?? 0), AppException::class, 'Minimum notice days is not fulfilled');
-        throw_if(Carbon::parse($request->resume_date)->startOfDay()->lte(Carbon::parse($last_date)->startOfDay()) && !$is_resume_same_day_first_half, AppException::class, 'Resume date must be after the last leave date');
+        // throw_if(Carbon::parse($request->resume_date)->startOfDay()->lte(Carbon::parse($last_date)->startOfDay()) && !$is_resume_same_day_first_half, AppException::class, 'Resume date must be after the last leave date');
         throw_if($is_handover_required && !$request->handover_by_uuid, AppException::class, 'Handover is required');
         throw_if($leave_policy->requires_attachment == StatusCodeConstants::ACTIVE && !$request->hasFile('attachment'), AppException::class, 'Attachment is required');
 
@@ -266,7 +266,7 @@ class LeaveRequestController extends Controller
         throw_if($new_manager->id != $old_manager_id && $old_manager_id, AppException::class, 'Manager approver already assigned');
         throw_if($leave_entitlement->user_id != $leave_request->user_id, AppException::class, 'Invalid leave entitlement');
         throw_if($leave_entitlement->balance_days < $request->total_days, AppException::class, 'Insufficient leave balance');
-        throw_if(Carbon::parse($request->resume_date)->startOfDay()->lt(Carbon::parse($start_date)->startOfDay()), AppException::class, 'Resume date must be after or equal to leave date');
+        // throw_if(Carbon::parse($request->resume_date)->startOfDay()->lt(Carbon::parse($start_date)->startOfDay()), AppException::class, 'Resume date must be after or equal to leave date');
         throw_if($is_handover_required && !$request->handover_by_uuid, AppException::class, 'Handover is required');
 
         DB::beginTransaction();
