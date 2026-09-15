@@ -43,7 +43,7 @@ class LeaveRequestUpdateRequest extends FormRequest
                 'max:' . Configuration::findByKey(ConfigurationCodeConstants::FILE_MAX_SIZE_MB)->value * 1024, // size in MB
             ],
             'request_dates' => ['required', 'array', 'min:1'],
-            'request_dates.*.date' => ['required', 'date', 'distinct', 'before:resume_date'],
+            'request_dates.*.date' => ['required', 'date', 'distinct'],
             'request_dates.*.is_half_day' => ['nullable', 'boolean'],
             'request_dates.*.is_first_half' => ['nullable', 'boolean'],
         ];
