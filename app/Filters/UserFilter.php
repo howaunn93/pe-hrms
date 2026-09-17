@@ -245,9 +245,18 @@ class UserFilter
                             $query->where('full_name', 'like', "%$word%")
                                 ->orWhere('first_name', 'like', "%$word%")
                                 ->orWhere('last_name', 'like', "%$word%")
-                                ->orWhere('email', 'like', "%$word%")
                                 ->orWhere('identity_number', 'like', "%$word%")
                                 ->orWhere('passport_number', 'like', "%$word%");
+                        })
+                        ->orWhere('email', 'like', "%$word%")
+                        ->orWhereHas('employment.department', function($query) use ($word) {
+                            $query->where('name', 'like', "%$word%");
+                        })
+                        ->orWhereHas('employment.position', function($query) use ($word) {
+                            $query->where('name', 'like', "%$word%");
+                        })
+                        ->orWhereHas('employment.office', function($query) use ($word) {
+                            $query->where('name', 'like', "%$word%");
                         })
                         ->orWhere('uuid', $word);
                 }
