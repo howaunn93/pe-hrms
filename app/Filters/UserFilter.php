@@ -245,6 +245,7 @@ class UserFilter
                             $query->where('full_name', 'like', "%$word%")
                                 ->orWhere('first_name', 'like', "%$word%")
                                 ->orWhere('last_name', 'like', "%$word%")
+                                ->orWhere('email', 'like', "%$word%")
                                 ->orWhere('identity_number', 'like', "%$word%")
                                 ->orWhere('passport_number', 'like', "%$word%");
                         })
