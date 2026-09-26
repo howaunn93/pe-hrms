@@ -30,16 +30,23 @@ class LeaveEntitlementController extends Controller
             'employment.position',
             'emergency',
             'certificates',
-            'leaveEntitlements' => function($query) {
-                $query->where('is_active', StatusCodeConstants::ACTIVE);
-            },
-            'leaveEntitlements.leavePolicy.leavePolicyTiers',
+            // 'leaveEntitlements' => function($query) {
+            //     $query->where('is_active', StatusCodeConstants::ACTIVE);
+            // },
+            // 'leaveEntitlements.leavePolicy.leavePolicyTiers',
         ])->active();
 
         $user = $this->user_filter->apply($request, $request->size, $user);
 
         $user->each(function ($user) {
             LeaveModuleHelpers::userLeaveEntitlementCheck($user->uuid);
+
+            $user->load([
+                'leaveEntitlements' => function($query) {
+                    $query->where('is_active', StatusCodeConstants::ACTIVE);
+                },
+                'leaveEntitlements.leavePolicy.leavePolicyTiers',
+            ]);
         });
 
         return self::responsePaginated(UserResource::collection($user), $user);
@@ -67,6 +74,8 @@ class LeaveEntitlementController extends Controller
         $leave_entitlement = LeaveEntitlement::findByUuid($uuid);
 
         LeaveModuleHelpers::userLeaveEntitlementCheck($leave_entitlement->user->uuid);
+
+        $leave_entitlement->refresh();
 
         return self::response(new LeaveEntitlementResource($leave_entitlement));
     }
