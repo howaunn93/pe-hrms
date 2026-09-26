@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('upcoming_event_targets');
+        Schema::dropIfExists('upcoming_event_departments');
     }
 };
