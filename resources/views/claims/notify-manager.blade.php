@@ -127,6 +127,11 @@
                                         @if($item->remark)
                                             <div style="margin-top:4px; color:#6b7280; font-size:12px; line-height:1.5;">{{ $item->remark }}</div>
                                         @endif
+                                        @if($item->attachment_path)
+                                            <div style="margin-top:6px; font-size:12px; line-height:1.5;">
+                                                <a href="{{ asset(\Illuminate\Support\Facades\Storage::url($item->attachment_path)) }}" target="_blank" style="color:#17a2b8; text-decoration:none; font-weight:600;">View Attachment</a>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td align="right" style="padding:12px; color:#111827; font-size:14px; font-weight:600; border-top:1px solid #e5e7eb;">
                                         {{ number_format($item->amount, 2) }}
