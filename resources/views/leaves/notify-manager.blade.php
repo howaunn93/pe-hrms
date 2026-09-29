@@ -146,6 +146,14 @@
                                     <div style="font-size:14px; line-height:1.5; color:#111827;">{{ $data['leave_request']->reason ?: '-' }}</div>
                                 </td>
                             </tr>
+                            @if($data['leave_request']->attachment_url)
+                                <tr>
+                                    <td colspan="2" style="padding:14px 16px; background:#ffffff; border-top:1px solid #e5e7eb;">
+                                        <div style="font-size:13px; color:#6b7280; margin-bottom:4px;">Attachment</div>
+                                        <a href="{{ asset(\Illuminate\Support\Facades\Storage::url($data['leave_request']->attachment_url)) }}" target="_blank" style="color:#17a2b8; text-decoration:none; font-size:14px; font-weight:600;">View Attachment</a>
+                                    </td>
+                                </tr>
+                            @endif
                             @if(isset($data['handover_remark']) && $data['handover_remark'])
                                 <tr>
                                     <td colspan="2" style="padding:14px 16px; background:#ffffff; border-top:1px solid #e5e7eb;">
