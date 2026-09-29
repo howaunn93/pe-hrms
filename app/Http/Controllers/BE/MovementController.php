@@ -15,6 +15,7 @@ use App\Http\Resources\MovementResource;
 use App\Models\Movement;
 use App\Models\MovementType;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -191,6 +192,17 @@ class MovementController extends Controller
         ])->where('uuid', $uuid)->active()->firstOrFail();
 
         return self::response(new MovementResource($movement));
+    }
+
+    public function exportPdf(MovementShowRequest $request, string $uuid)
+    {
+        $movement = Movement::findByUuid($uuid);
+
+        $pdf = Pdf::loadView('movements.movement-export-pdf', [
+            'movement' => $movement,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download("movement-{$movement->uuid}.pdf");
     }
 
     public function calendarSummaries(MovementCalendarSummaryRequest $request)

@@ -245,6 +245,7 @@ Route::group([
         Route::prefix('movements')->group(function () {
             Route::get('/', [MovementController::class, 'index']);
             Route::get('/export-excel', [MovementController::class, 'exportExcel']);
+            Route::get('/export-pdf/{uuid}', [MovementController::class, 'exportPdf']);
             Route::get('/calendar-summaries', [MovementController::class, 'calendarSummaries']);
             Route::post('/', [MovementController::class, 'store']);
             Route::get('/{uuid}', [MovementController::class, 'show']);
