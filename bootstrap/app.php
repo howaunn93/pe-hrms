@@ -12,12 +12,19 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\RecordNotFoundException;
+use Illuminate\Database\RecordsNotFoundException;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Routing\Exceptions\BackedEnumCaseNotFoundException;
+use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\MessageBag;
+use Symfony\Component\HttpFoundation\Exception\RequestExceptionInterface;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Exceptions\UnauthorizedException;
 use Spatie\Permission\Middleware\PermissionMiddleware;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -42,6 +49,19 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         
+        // Stop ignoring exceptions to capture them in the error log
+        $exceptions->stopIgnoring(AuthenticationException::class);
+        $exceptions->stopIgnoring(AuthorizationException::class);
+        $exceptions->stopIgnoring(BackedEnumCaseNotFoundException::class);
+        $exceptions->stopIgnoring(HttpException::class);
+        $exceptions->stopIgnoring(HttpResponseException::class);
+        $exceptions->stopIgnoring(ModelNotFoundException::class);
+        $exceptions->stopIgnoring(RecordNotFoundException::class);
+        $exceptions->stopIgnoring(RecordsNotFoundException::class);
+        $exceptions->stopIgnoring(RequestExceptionInterface::class);
+        $exceptions->stopIgnoring(TokenMismatchException::class);
+        $exceptions->stopIgnoring(ValidationException::class);
+    
         $exceptions->report(function (Throwable $exception): void {
             ErrorLogService::capture($exception); // Log the exception in error_logs
         });

@@ -29,6 +29,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Password;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LeaveRequestController extends Controller
 {
@@ -429,6 +431,17 @@ class LeaveRequestController extends Controller
         $leave_request = LeaveRequest::findByUuid($uuid);
 
         return self::response(new LeaveRequestResource($leave_request));
+    }
+
+    public function exportPdf(LeaveRequestShowRequest $request, string $uuid)
+    {
+        $leave_request = LeaveRequest::findByUuid($uuid);
+
+        $pdf = Pdf::loadView('leaves.leave-export-pdf', [
+            'leave_request' => $leave_request,
+        ])->setPaper('a4', 'portrait');
+
+        return $pdf->download("leave-application-{$leave_request->uuid}.pdf");
     }
 
     public function calendarSummaries(LeaveRequestCalendarSummaryRequest $request)
