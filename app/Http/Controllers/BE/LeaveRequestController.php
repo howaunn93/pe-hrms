@@ -5,6 +5,7 @@ namespace App\Http\Controllers\BE;
 use App\Constants\StatusCodeConstants;
 use App\Exceptions\AppException;
 use App\Filters\LeaveRequestFilter;
+use App\Helpers\LeaveModuleHelpers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveRequestCalendarSummaryRequest;
 use App\Http\Requests\LeaveRequestDirectorApproveRequest;
@@ -96,22 +97,7 @@ class LeaveRequestController extends Controller
             $handover_by = User::findByUuid($request->handover_by_uuid);
         }
 
-        $leave_policy = $leave_entitlement->leavePolicy;
-        $is_handover_required = $leave_policy?->is_handover_required == StatusCodeConstants::ACTIVE && $request->total_days >= ($leave_policy->handover_min_days ?? 0);
-        $start_date = collect($request->request_dates)->min('date');
-        $last_date = collect($request->request_dates)->max('date');
-        $last_request_date = collect($request->request_dates)->sortBy('date')->last();
-        $is_resume_same_day_first_half = Carbon::parse($request->resume_date)->startOfDay()->eq(Carbon::parse($last_date)->startOfDay())
-            && isset($last_request_date['is_half_day']) && $last_request_date['is_half_day']
-            && isset($last_request_date['is_first_half']) && $last_request_date['is_first_half'];
-        $notice_days = self::currentDateTime()->startOfDay()->diffInDays(Carbon::parse($start_date)->startOfDay(), false);
-
-        throw_if($leave_entitlement->user_id != $user->id, AppException::class, 'Invalid leave entitlement');
-        throw_if($this->availableLeaveDays($leave_entitlement) < $request->total_days, AppException::class, 'Insufficient leave balance');
-        throw_if($notice_days < ($leave_policy->min_notice_days ?? 0), AppException::class, 'Minimum notice days is not fulfilled');
-        // throw_if(Carbon::parse($request->resume_date)->startOfDay()->lte(Carbon::parse($last_date)->startOfDay()) && !$is_resume_same_day_first_half, AppException::class, 'Resume date must be after the last leave date');
-        throw_if($is_handover_required && !$request->handover_by_uuid, AppException::class, 'Handover is required');
-        throw_if($leave_policy->requires_attachment == StatusCodeConstants::ACTIVE && !$request->hasFile('attachment'), AppException::class, 'Attachment is required');
+        LeaveModuleHelpers::leaveRequestCheck($user, $leave_entitlement, $request->request_dates, $request->resume_date, $request->handover_by_uuid, $request->total_days, $request->attachment);
 
         DB::beginTransaction();
 
@@ -242,175 +228,177 @@ class LeaveRequestController extends Controller
 
     public function update(LeaveRequestUpdateRequest $request, string $uuid)
     {
-        $leave_request = LeaveRequest::findByUuid($uuid);
+        // $leave_request = LeaveRequest::findByUuid($uuid);
 
-        $user = $leave_request->user;
-        $old_manager_id = $leave_request->manager_approver_id;
-        $new_manager = User::findByUuid($request->manager_approver_uuid);
-        $leave_entitlement = LeaveEntitlement::findByUuid($request->leave_entitlement_uuid);
+        // $user = $leave_request->user;
+        // $old_manager_id = $leave_request->manager_approver_id;
+        // $new_manager = User::findByUuid($request->manager_approver_uuid);
+        // $leave_entitlement = LeaveEntitlement::findByUuid($request->leave_entitlement_uuid);
 
-        $handover_by = null;
-        if ($request->handover_by_uuid)
-        {
-            $handover_by = User::findByUuid($request->handover_by_uuid);
-        }
+        // $handover_by = null;
+        // if ($request->handover_by_uuid)
+        // {
+        //     $handover_by = User::findByUuid($request->handover_by_uuid);
+        // }
 
-        $leave_policy = $leave_entitlement->leavePolicy;
-        $is_handover_required = $leave_policy?->is_handover_required == StatusCodeConstants::ACTIVE && $request->total_days >= ($leave_policy->handover_min_days ?? 0);
-        $handover_changed = $handover_by?->id != $leave_request->handover_by;
-        $start_date = collect($request->request_dates)->pluck('date')->sort()->first();
+        // $leave_policy = $leave_entitlement->leavePolicy;
+        // $is_handover_required = $leave_policy?->is_handover_required == StatusCodeConstants::ACTIVE && $request->total_days >= ($leave_policy->handover_min_days ?? 0);
+        // $handover_changed = $handover_by?->id != $leave_request->handover_by;
+        // $start_date = collect($request->request_dates)->pluck('date')->sort()->first();
 
-        throw_if($leave_request->manager_action_at, AppException::class, 'Leave request already reviewed by manager');
-        throw_if($leave_request->director_action_at, AppException::class, 'Leave request already reviewed by director');
-        throw_if($handover_changed && $leave_request->handover_action_at, AppException::class, 'Handover already reviewed');
-        throw_if($new_manager->id != $old_manager_id && $old_manager_id, AppException::class, 'Manager approver already assigned');
-        throw_if($leave_entitlement->user_id != $leave_request->user_id, AppException::class, 'Invalid leave entitlement');
-        throw_if($leave_entitlement->balance_days < $request->total_days, AppException::class, 'Insufficient leave balance');
-        // throw_if(Carbon::parse($request->resume_date)->startOfDay()->lt(Carbon::parse($start_date)->startOfDay()), AppException::class, 'Resume date must be after or equal to leave date');
-        throw_if($is_handover_required && !$request->handover_by_uuid, AppException::class, 'Handover is required');
+        // throw_if($leave_request->manager_action_at, AppException::class, 'Leave request already reviewed by manager');
+        // throw_if($leave_request->director_action_at, AppException::class, 'Leave request already reviewed by director');
+        // throw_if($handover_changed && $leave_request->handover_action_at, AppException::class, 'Handover already reviewed');
+        // throw_if($new_manager->id != $old_manager_id && $old_manager_id, AppException::class, 'Manager approver already assigned');
+        // throw_if($leave_entitlement->user_id != $leave_request->user_id, AppException::class, 'Invalid leave entitlement');
+        // throw_if($leave_entitlement->balance_days < $request->total_days, AppException::class, 'Insufficient leave balance');
+        // // throw_if(Carbon::parse($request->resume_date)->startOfDay()->lt(Carbon::parse($start_date)->startOfDay()), AppException::class, 'Resume date must be after or equal to leave date');
+        // throw_if($is_handover_required && !$request->handover_by_uuid, AppException::class, 'Handover is required');
 
-        DB::beginTransaction();
+        // DB::beginTransaction();
 
-        try {
-            $attachment_url = null;
+        // try {
+        //     $attachment_url = null;
 
-            if ($request->hasFile('attachment'))
-            {
-                $file = $request->file('attachment');
+        //     if ($request->hasFile('attachment'))
+        //     {
+        //         $file = $request->file('attachment');
 
-                $filename = time() . '_' . self::uuid() . '.' . $file->getClientOriginalExtension();
+        //         $filename = time() . '_' . self::uuid() . '.' . $file->getClientOriginalExtension();
 
-                $attachment_url = $file->storeAs('leaves', $filename, 'public');
-            }
+        //         $attachment_url = $file->storeAs('leaves', $filename, 'public');
+        //     }
 
-            $leave_request->update([
-                'manager_approver_id' => $new_manager->id,
-                'leave_entitlement_id' => $leave_entitlement->id,
-                'handover_by' => $handover_by?->id,
-                'handover_action_at' => $handover_changed ? null : $leave_request->handover_action_at,
-                'handover_approved' => $handover_changed ? StatusCodeConstants::INACTIVE : $leave_request->handover_approved,
-                'resume_date' => $request->resume_date,
-                'total_days' => $request->total_days,
-                'reason' => $request->reason,
-                'attachment_url' => $attachment_url ? $attachment_url : $leave_request->attachment_url,
-                'updated_by' => self::auth()->uuid,
-                'updated_at' => self::currentDateTime(),
-            ]);
+        //     $leave_request->update([
+        //         'manager_approver_id' => $new_manager->id,
+        //         'leave_entitlement_id' => $leave_entitlement->id,
+        //         'handover_by' => $handover_by?->id,
+        //         'handover_action_at' => $handover_changed ? null : $leave_request->handover_action_at,
+        //         'handover_approved' => $handover_changed ? StatusCodeConstants::INACTIVE : $leave_request->handover_approved,
+        //         'resume_date' => $request->resume_date,
+        //         'total_days' => $request->total_days,
+        //         'reason' => $request->reason,
+        //         'attachment_url' => $attachment_url ? $attachment_url : $leave_request->attachment_url,
+        //         'updated_by' => self::auth()->uuid,
+        //         'updated_at' => self::currentDateTime(),
+        //     ]);
 
-            if ($request->filled('request_dates') && !empty($request->request_dates))
-            {
-                LeaveRequestDate::where('leave_request_id', $leave_request->id)->update([
-                    'is_active' => StatusCodeConstants::INACTIVE,
-                    'updated_by' => self::auth()->uuid,
-                    'updated_at' => self::currentDateTime(),
-                ]);
+        //     if ($request->filled('request_dates') && !empty($request->request_dates))
+        //     {
+        //         LeaveRequestDate::where('leave_request_id', $leave_request->id)->update([
+        //             'is_active' => StatusCodeConstants::INACTIVE,
+        //             'updated_by' => self::auth()->uuid,
+        //             'updated_at' => self::currentDateTime(),
+        //         ]);
                 
-                foreach ($request->request_dates as $request_date)
-                {
-                    LeaveRequestDate::create([
-                        'uuid' => self::uuid(),
-                        'leave_request_id' => $leave_request->id,
-                        'date' => $request_date['date'],
-                        'is_half_day' => isset($request_date['is_half_day']) && $request_date['is_half_day'] ? StatusCodeConstants::ACTIVE : StatusCodeConstants::INACTIVE,
-                        'is_first_half' => isset($request_date['is_first_half']) && $request_date['is_first_half'] ? StatusCodeConstants::ACTIVE : StatusCodeConstants::INACTIVE,
-                        'is_active' => StatusCodeConstants::ACTIVE,
-                        'created_by' => self::auth()->uuid,
-                        'created_at' => self::currentDateTime(),
-                        'updated_by' => self::auth()->uuid,
-                        'updated_at' => self::currentDateTime(),
-                    ]);
-                }
-            }
+        //         foreach ($request->request_dates as $request_date)
+        //         {
+        //             LeaveRequestDate::create([
+        //                 'uuid' => self::uuid(),
+        //                 'leave_request_id' => $leave_request->id,
+        //                 'date' => $request_date['date'],
+        //                 'is_half_day' => isset($request_date['is_half_day']) && $request_date['is_half_day'] ? StatusCodeConstants::ACTIVE : StatusCodeConstants::INACTIVE,
+        //                 'is_first_half' => isset($request_date['is_first_half']) && $request_date['is_first_half'] ? StatusCodeConstants::ACTIVE : StatusCodeConstants::INACTIVE,
+        //                 'is_active' => StatusCodeConstants::ACTIVE,
+        //                 'created_by' => self::auth()->uuid,
+        //                 'created_at' => self::currentDateTime(),
+        //                 'updated_by' => self::auth()->uuid,
+        //                 'updated_at' => self::currentDateTime(),
+        //             ]);
+        //         }
+        //     }
 
-            if ($handover_by && $handover_changed)
-            {
-                $token = Password::createToken($handover_by);
+        //     if ($handover_by && $handover_changed)
+        //     {
+        //         $token = Password::createToken($handover_by);
 
-                $data = [
-                    'name' => trim(($handover_by->personal?->first_name ?? '') . ' ' . ($handover_by->personal?->last_name ?? '')) ?: $handover_by->email,
-                    'applicant_name' => trim(($user->personal?->first_name ?? '') . ' ' . ($user->personal?->last_name ?? '')) ?: $user->email,
-                    'applicant_email' => $user->email,
-                    'applicant_phone_number' => $user->contact?->phone_number,
-                    'submitted_at' => self::currentDateTime()->format('Y-m-d h:i:s A'),
-                    'subject' => 'PE Portal - Leave Pending Handover Approval',
-                    'title' => 'Leave Handover Approval',
-                    'leave_request' => $leave_request,
-                    'leave_entitlement' => $leave_entitlement,
-                    'action_url' => url('/leave-request-review?token=' . $token . '&email=' . urlencode($handover_by->email) . '&leave_request_uuid=' . $leave_request->uuid),
-                    'action_label' => 'Review Handover',
-                ];
+        //         $data = [
+        //             'name' => trim(($handover_by->personal?->first_name ?? '') . ' ' . ($handover_by->personal?->last_name ?? '')) ?: $handover_by->email,
+        //             'applicant_name' => trim(($user->personal?->first_name ?? '') . ' ' . ($user->personal?->last_name ?? '')) ?: $user->email,
+        //             'applicant_email' => $user->email,
+        //             'applicant_phone_number' => $user->contact?->phone_number,
+        //             'submitted_at' => self::currentDateTime()->format('Y-m-d h:i:s A'),
+        //             'subject' => 'PE Portal - Leave Pending Handover Approval',
+        //             'title' => 'Leave Handover Approval',
+        //             'leave_request' => $leave_request,
+        //             'leave_entitlement' => $leave_entitlement,
+        //             'action_url' => url('/leave-request-review?token=' . $token . '&email=' . urlencode($handover_by->email) . '&leave_request_uuid=' . $leave_request->uuid),
+        //             'action_label' => 'Review Handover',
+        //         ];
 
-                Mail::to($handover_by->email)->send(new LeaveApplicationMail($data));
-            }
-            else if (!$handover_by && $new_manager->id != $old_manager_id) // only send email if manager is updated
-            {
-                $data = [
-                    'name' => trim(($new_manager->personal?->first_name ?? '') . ' ' . ($new_manager->personal?->last_name ?? '')) ?: $new_manager->email,
-                    'applicant_name' => trim(($user->personal?->first_name ?? '') . ' ' . ($user->personal?->last_name ?? '')) ?: $user->email,
-                    'applicant_email' => $user->email,
-                    'applicant_phone_number' => $user->contact?->phone_number,
-                    'submitted_at' => self::currentDateTime()->format('Y-m-d h:i:s A'),
-                    'subject' => 'PE Portal - Leave Pending Manager Approval',
-                    'title' => 'Leave Manager Approval',
-                    'leave_request' => $leave_request,
-                    'leave_entitlement' => $leave_entitlement,
-                    'action_url' => url('/leave-request-review?token=' . Password::createToken($new_manager) . '&email=' . urlencode($new_manager->email) . '&leave_request_uuid=' . $leave_request->uuid . '&type=manager'),
-                    'action_label' => 'Review Leave',
-                ];
+        //         Mail::to($handover_by->email)->send(new LeaveApplicationMail($data));
+        //     }
+        //     else if (!$handover_by && $new_manager->id != $old_manager_id) // only send email if manager is updated
+        //     {
+        //         $data = [
+        //             'name' => trim(($new_manager->personal?->first_name ?? '') . ' ' . ($new_manager->personal?->last_name ?? '')) ?: $new_manager->email,
+        //             'applicant_name' => trim(($user->personal?->first_name ?? '') . ' ' . ($user->personal?->last_name ?? '')) ?: $user->email,
+        //             'applicant_email' => $user->email,
+        //             'applicant_phone_number' => $user->contact?->phone_number,
+        //             'submitted_at' => self::currentDateTime()->format('Y-m-d h:i:s A'),
+        //             'subject' => 'PE Portal - Leave Pending Manager Approval',
+        //             'title' => 'Leave Manager Approval',
+        //             'leave_request' => $leave_request,
+        //             'leave_entitlement' => $leave_entitlement,
+        //             'action_url' => url('/leave-request-review?token=' . Password::createToken($new_manager) . '&email=' . urlencode($new_manager->email) . '&leave_request_uuid=' . $leave_request->uuid . '&type=manager'),
+        //             'action_label' => 'Review Leave',
+        //         ];
 
-                Mail::to($new_manager->email)->send(new LeaveApplicationMail($data));
-            }
+        //         Mail::to($new_manager->email)->send(new LeaveApplicationMail($data));
+        //     }
 
-            $leave_request->load([
-                'leaveRequestDates',
+        //     $leave_request->load([
+        //         'leaveRequestDates',
                 
-                'user.personal',
-                'user.contact',
-                'user.employment.office',
-                'user.employment.position',
-                'user.employment.department',
-                'user.emergency',
-                'user.certificates',
+        //         'user.personal',
+        //         'user.contact',
+        //         'user.employment.office',
+        //         'user.employment.position',
+        //         'user.employment.department',
+        //         'user.emergency',
+        //         'user.certificates',
 
-                'managerApprover.personal',
-                'managerApprover.contact',
-                'managerApprover.employment.office',
-                'managerApprover.employment.position',
-                'managerApprover.employment.department',
-                'managerApprover.emergency',
+        //         'managerApprover.personal',
+        //         'managerApprover.contact',
+        //         'managerApprover.employment.office',
+        //         'managerApprover.employment.position',
+        //         'managerApprover.employment.department',
+        //         'managerApprover.emergency',
 
-                'leaveEntitlement.leavePolicy.leavePolicyTiers',
+        //         'leaveEntitlement.leavePolicy.leavePolicyTiers',
 
-                'managerActionBy.personal',
-                'managerActionBy.contact',
-                'managerActionBy.employment.office',
-                'managerActionBy.employment.position',
-                'managerActionBy.employment.department',
-                'managerActionBy.emergency',
+        //         'managerActionBy.personal',
+        //         'managerActionBy.contact',
+        //         'managerActionBy.employment.office',
+        //         'managerActionBy.employment.position',
+        //         'managerActionBy.employment.department',
+        //         'managerActionBy.emergency',
 
-                'directorActionBy.personal',
-                'directorActionBy.contact',
-                'directorActionBy.employment.office',
-                'directorActionBy.employment.position',
-                'directorActionBy.employment.department',
-                'directorActionBy.emergency',
+        //         'directorActionBy.personal',
+        //         'directorActionBy.contact',
+        //         'directorActionBy.employment.office',
+        //         'directorActionBy.employment.position',
+        //         'directorActionBy.employment.department',
+        //         'directorActionBy.emergency',
 
-                'handoverBy.personal',
-                'handoverBy.contact',
-                'handoverBy.employment.office',
-                'handoverBy.employment.position',
-                'handoverBy.employment.department',
-                'handoverBy.emergency',
-            ]);
+        //         'handoverBy.personal',
+        //         'handoverBy.contact',
+        //         'handoverBy.employment.office',
+        //         'handoverBy.employment.position',
+        //         'handoverBy.employment.department',
+        //         'handoverBy.emergency',
+        //     ]);
 
-            DB::commit();
+        //     DB::commit();
 
-            return self::response(new LeaveRequestResource($leave_request));
+        //     return self::response(new LeaveRequestResource($leave_request));
 
-        } catch (\Exception $exception) {
-            DB::rollback();
-            throw $exception;
-        }
+        // } catch (\Exception $exception) {
+        //     DB::rollback();
+        //     throw $exception;
+        // }
+
+        throw_if(true, AppException::class, 'This feature is not available');
     }
 
     public function updateStatus(LeaveRequestUpdateStatusRequest $request, string $uuid)
@@ -558,7 +546,7 @@ class LeaveRequestController extends Controller
         throw_if($leave_request->manager_approver_id != $manager->id, AppException::class, 'Invalid manager approver');
         throw_if($leave_request->handover_by && $leave_request->handover_action_at == null, AppException::class, 'Handover not yet approved or rejected');
         throw_if($leave_request->handover_by && $leave_request->handover_approved != StatusCodeConstants::ACTIVE, AppException::class, 'Handover not approved');
-        throw_if($request->approve && $this->availableLeaveDays($leave_request->leaveEntitlement) < $leave_request->total_days, AppException::class, 'Insufficient leave balance');
+        throw_if($request->approve && LeaveModuleHelpers::availableLeaveDays($leave_request->leaveEntitlement) < $leave_request->total_days, AppException::class, 'Insufficient leave balance');
 
         DB::beginTransaction();
 
@@ -629,7 +617,7 @@ class LeaveRequestController extends Controller
             throw_if($leave_request->manager_action_at == null, AppException::class, 'Manager not yet approved or rejected');
             throw_if($leave_request->manager_approved != StatusCodeConstants::ACTIVE, AppException::class, 'Manager not approved');
             throw_if($leave_request->director_action_at, AppException::class, 'Leave request already reviewed by director');
-            throw_if($request->approve && $this->availableLeaveDays($leave_request->leaveEntitlement) < $leave_request->total_days, AppException::class, 'Insufficient leave balance');
+            throw_if($request->approve && LeaveModuleHelpers::availableLeaveDays($leave_request->leaveEntitlement) < $leave_request->total_days, AppException::class, 'Insufficient leave balance');
 
             $leave_request->update([
                 'director_action_by' => $director->id,
@@ -642,7 +630,7 @@ class LeaveRequestController extends Controller
             {
                 $leave_entitlement = $leave_request->leaveEntitlement;
 
-                $this->deductLeaveDays($leave_entitlement, $leave_request->total_days, self::auth()->uuid);
+                LeaveModuleHelpers::deductLeaveDays($leave_entitlement, $leave_request->total_days, self::auth()->uuid);
             }
 
             $leave_request = LeaveRequest::findByUuid($uuid);
@@ -655,39 +643,6 @@ class LeaveRequestController extends Controller
             DB::rollback();
             throw $exception;
         }
-    }
-
-    private function availableLeaveDays($leave_entitlement)
-    {
-        $carried_forward_days = 0;
-
-        if ($leave_entitlement->carry_forward_expiry_date && Carbon::parse($leave_entitlement->carry_forward_expiry_date)->endOfDay()->gte(self::currentDateTime()))
-        {
-            $carried_forward_days = $leave_entitlement->carried_forward_days;
-        }
-
-        return $leave_entitlement->balance_days + $carried_forward_days;
-    }
-
-    private function deductLeaveDays($leave_entitlement, $total_days, $updated_by)
-    {
-        $carried_forward_days = 0;
-
-        if ($leave_entitlement->carry_forward_expiry_date && Carbon::parse($leave_entitlement->carry_forward_expiry_date)->endOfDay()->gte(self::currentDateTime()))
-        {
-            $carried_forward_days = $leave_entitlement->carried_forward_days;
-        }
-
-        $deduct_carried_forward_days = min($carried_forward_days, $total_days);
-        $remaining_days = $total_days - $deduct_carried_forward_days;
-
-        $leave_entitlement->update([
-            'used_days' => $leave_entitlement->used_days + $total_days,
-            'carried_forward_days' => $leave_entitlement->carried_forward_days - $deduct_carried_forward_days,
-            'balance_days' => $leave_entitlement->balance_days - $remaining_days,
-            'updated_by' => $updated_by,
-            'updated_at' => self::currentDateTime(),
-        ]);
     }
 
     public function exportExcel(LeaveRequestIndexRequest $request)

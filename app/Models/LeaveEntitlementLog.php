@@ -4,22 +4,19 @@ namespace App\Models;
 
 use App\Constants\StatusCodeConstants;
 use App\Traits\HasActivityLog;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
-class LeavePolicy extends Model
+class LeaveEntitlementLog extends Model
 {
-    use HasFactory, HasActivityLog;
+    use HasActivityLog;
 
-    protected $table = 'leave_policies';
+    protected $table = 'leave_entitlement_logs';
     public $timestamps = false;
     protected $casts = [
-        'allow_half_day' => 'boolean',
-        'is_handover_required' => 'boolean',
-        'requires_attachment' => 'boolean',
+        'is_carry_forward' => 'boolean',
         'is_prorated' => 'boolean',
-        'is_paid' => 'boolean',
+        'is_manual' => 'boolean',
         'is_active' => 'boolean',
         'created_at' => 'datetime:Y-m-d H:i:s.u',
         'updated_at' => 'datetime:Y-m-d H:i:s.u',
@@ -27,20 +24,15 @@ class LeavePolicy extends Model
 
     protected $fillable = [
         'uuid',
-        'name',
-        'code',
-        'description',
-        'allow_half_day',
-        'carry_forward_days',
-        'carry_forward_expiry_month',
-        'carry_forward_expiry_date',
-        'is_handover_required',
-        'handover_min_days',
-        'min_notice_days',
-        'requires_attachment',
-        'allowed_negative_days',
+        'leave_entitlement_id',
+        'assigned_days',
+        'used_days',
+        'assigned_at',
+        'available_at',
+        'expired_at',
+        'is_carry_forward',
         'is_prorated',
-        'is_paid',
+        'is_manual',
         'is_active',
         'created_by',
         'created_at',
@@ -62,7 +54,7 @@ class LeavePolicy extends Model
     public static function findByUuid(string $uuid, bool $fail = true)
     {
         $query = self::with([
-            'leavePolicyTiers',
+            'leaveEntitlement',
         ])->where('uuid', $uuid)
             ->where('is_active', StatusCodeConstants::ACTIVE);
 
@@ -77,10 +69,8 @@ class LeavePolicy extends Model
     /**
      * Relationships
      */
-    public function leavePolicyTiers()
+    public function leaveEntitlement()
     {
-        return $this->hasMany(LeavePolicyTier::class, 'leave_policy_id', 'id')->active()
-            ->orderBy('service_year_from', 'asc')
-            ->orderBy('service_year_to', 'asc');
+        return $this->belongsTo(LeaveEntitlement::class, 'leave_entitlement_id', 'id')->active();
     }
 }

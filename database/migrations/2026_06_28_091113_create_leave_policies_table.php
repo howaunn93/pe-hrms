@@ -36,7 +36,11 @@ return new class extends Migration
             $table->integer('min_notice_days')->default(0);
             $table->boolean('requires_attachment')->default(false);
 
+            // allow negative balance
+            $table->decimal('allowed_negative_days', 8, 2)->default(0);
+
             // policy behavior
+            $table->boolean('is_prorated')->default(false);
             $table->boolean('is_paid')->default(true);
 
             $table->boolean('is_active')->default(1);

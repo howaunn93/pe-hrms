@@ -29,11 +29,11 @@ class LeaveEntitlementUpdateRequest extends FormRequest
     {
         return [
             'uuid' => ['required', 'string', 'uuid'],
-            'entitled_days' => ['required', 'numeric', 'min:0'],
-            'carried_forward_days' => ['required', 'numeric', 'min:0'],
             'used_days' => ['required', 'numeric', 'min:0'],
             'balance_days' => ['required', 'numeric', 'min:0'],
-            'carry_forward_expiry_date' => ['nullable', 'date'],
+
+            'available_at' => ['required', 'date'],
+            'expired_at' => ['required', 'date'],
         ];
     }
 }

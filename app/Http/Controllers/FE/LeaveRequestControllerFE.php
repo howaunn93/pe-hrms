@@ -3,12 +3,12 @@
 namespace App\Http\Controllers\FE;
 
 use App\Constants\StatusCodeConstants;
+use App\Helpers\LeaveModuleHelpers;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LeaveRequestHandoverActionFE;
 use App\Mail\LeaveApplicationMail;
 use App\Models\LeaveRequest;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -46,7 +46,7 @@ class LeaveRequestControllerFE extends Controller
             return view('leaves.leave-review-invalid');
         }
 
-        if ($this->availableLeaveDays($leave_request->leaveEntitlement) < $leave_request->total_days)
+        if (LeaveModuleHelpers::availableLeaveDays($leave_request->leaveEntitlement) < $leave_request->total_days)
         {
             return view('leaves.leave-insufficient');
         }
@@ -83,7 +83,7 @@ class LeaveRequestControllerFE extends Controller
 
         $type = $request->type ?? 'handover';
 
-        if ($type == 'director' && $request->approve && $this->availableLeaveDays($leave_request->leaveEntitlement) < $leave_request->total_days)
+        if ($type == 'director' && $request->approve && LeaveModuleHelpers::availableLeaveDays($leave_request->leaveEntitlement) < $leave_request->total_days)
         {
             return view('leaves.leave-insufficient');
         }
@@ -179,7 +179,7 @@ class LeaveRequestControllerFE extends Controller
                 {
                     $leave_entitlement = $leave_request->leaveEntitlement;
 
-                    $this->deductLeaveDays($leave_entitlement, $leave_request->total_days, $user->uuid);
+                    LeaveModuleHelpers::deductLeaveDays($leave_entitlement, $leave_request->total_days, $user->uuid);
                 }
             }
 
@@ -198,36 +198,4 @@ class LeaveRequestControllerFE extends Controller
         return view('leaves.leave-review-success');
     }
 
-    private function availableLeaveDays($leave_entitlement)
-    {
-        $carried_forward_days = 0;
-
-        if ($leave_entitlement->carry_forward_expiry_date && Carbon::parse($leave_entitlement->carry_forward_expiry_date)->endOfDay()->gte(self::currentDateTime()))
-        {
-            $carried_forward_days = $leave_entitlement->carried_forward_days;
-        }
-
-        return $leave_entitlement->balance_days + $carried_forward_days;
-    }
-
-    private function deductLeaveDays($leave_entitlement, $total_days, $updated_by)
-    {
-        $carried_forward_days = 0;
-
-        if ($leave_entitlement->carry_forward_expiry_date && Carbon::parse($leave_entitlement->carry_forward_expiry_date)->endOfDay()->gte(self::currentDateTime()))
-        {
-            $carried_forward_days = $leave_entitlement->carried_forward_days;
-        }
-
-        $deduct_carried_forward_days = min($carried_forward_days, $total_days);
-        $remaining_days = $total_days - $deduct_carried_forward_days;
-
-        $leave_entitlement->update([
-            'used_days' => $leave_entitlement->used_days + $total_days,
-            'carried_forward_days' => $leave_entitlement->carried_forward_days - $deduct_carried_forward_days,
-            'balance_days' => $leave_entitlement->balance_days - $remaining_days,
-            'updated_by' => $updated_by,
-            'updated_at' => self::currentDateTime(),
-        ]);
-    }
 }

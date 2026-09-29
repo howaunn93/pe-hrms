@@ -59,6 +59,7 @@ class LeaveEntitlement extends Model
             'user.emergency',
             'user.certificates',
             'leavePolicy.leavePolicyTiers',
+            'leaveEntitlementLogs',
         ])->where('uuid', $uuid)
             ->where('is_active', StatusCodeConstants::ACTIVE);
 
@@ -81,5 +82,10 @@ class LeaveEntitlement extends Model
     public function leavePolicy()
     {
         return $this->belongsTo(LeavePolicy::class, 'leave_policy_id', 'id')->active();
+    }
+
+    public function leaveEntitlementLogs()
+    {
+        return $this->hasMany(LeaveEntitlementLog::class, 'leave_entitlement_id', 'id')->active();
     }
 }

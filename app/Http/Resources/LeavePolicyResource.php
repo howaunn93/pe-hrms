@@ -28,6 +28,8 @@ class LeavePolicyResource extends JsonResource
             'handover_min_days' => $this->handover_min_days,
             'min_notice_days' => $this->min_notice_days,
             'requires_attachment' => $this->requires_attachment,
+            'allowed_negative_days' => $this->allowed_negative_days,
+            'is_prorated' => $this->is_prorated,
             'is_paid' => $this->is_paid,
             'is_active' => $this->is_active,
             'created_by' => $this->created_by,

@@ -36,6 +36,8 @@ class LeavePolicyStoreRequest extends FormRequest
             'handover_min_days' => ['nullable', 'numeric', 'min:0'],
             'min_notice_days' => ['nullable', 'integer', 'min:0'],
             'requires_attachment' => ['required', 'boolean'],
+            'allowed_negative_days' => ['nullable', 'numeric', 'min:0'],
+            'is_prorated' => ['required', 'boolean'],
             'is_paid' => ['required', 'boolean'],
             'leave_policy_tiers' => ['required', 'array', 'min:1'],
             'leave_policy_tiers.*.service_year_from' => ['required', 'integer', 'min:0'],

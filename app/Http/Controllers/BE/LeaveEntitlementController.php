@@ -13,6 +13,7 @@ use App\Http\Resources\LeaveEntitlementResource;
 use App\Http\Resources\UserResource;
 use App\Models\LeaveEntitlement;
 use App\Models\User;
+use Carbon\Carbon;
 
 class LeaveEntitlementController extends Controller
 {
@@ -43,9 +44,11 @@ class LeaveEntitlementController extends Controller
 
             $user->load([
                 'leaveEntitlements' => function($query) {
-                    $query->where('is_active', StatusCodeConstants::ACTIVE);
+                    $query->where('is_active', StatusCodeConstants::ACTIVE)
+                        ->where('year', Carbon::now()->format('Y'));
                 },
                 'leaveEntitlements.leavePolicy.leavePolicyTiers',
+                'leaveEntitlements.leaveEntitlementLogs',
             ]);
         });
 
@@ -56,15 +59,9 @@ class LeaveEntitlementController extends Controller
     {
         $leave_entitlement = LeaveEntitlement::findByUuid($uuid);
 
-        $leave_entitlement->update([
-            'entitled_days' => $request->entitled_days,
-            'carried_forward_days' => $request->carried_forward_days,
-            'used_days' => $request->used_days,
-            'balance_days' => $request->balance_days,
-            'carry_forward_expiry_date' => $request->carry_forward_expiry_date,
-            'updated_by' => self::auth()->uuid,
-            'updated_at' => self::currentDateTime(),
-        ]);
+        LeaveModuleHelpers::addManualLeave($leave_entitlement, $request->used_days, $request->balance_days, $request->available_at, $request->expired_at);
+
+        LeaveModuleHelpers::userLeaveEntitlementCheck($leave_entitlement->user->uuid);
 
         return self::response(new LeaveEntitlementResource($leave_entitlement));
     }
