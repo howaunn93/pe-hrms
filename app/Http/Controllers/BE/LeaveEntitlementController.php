@@ -59,7 +59,10 @@ class LeaveEntitlementController extends Controller
     {
         $leave_entitlement = LeaveEntitlement::findByUuid($uuid);
 
-        LeaveModuleHelpers::addManualLeave($leave_entitlement, $request->used_days, $request->balance_days, $request->available_at, $request->expired_at);
+        $available_at = Carbon::today();
+        $expired_at = Carbon::now()->endOfYear();
+
+        LeaveModuleHelpers::addManualLeave($leave_entitlement, $request->used_days, $request->balance_days, $available_at, $expired_at);
 
         LeaveModuleHelpers::userLeaveEntitlementCheck($leave_entitlement->user->uuid);
 

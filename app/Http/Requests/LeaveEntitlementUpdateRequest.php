@@ -32,8 +32,8 @@ class LeaveEntitlementUpdateRequest extends FormRequest
             'used_days' => ['required', 'numeric', 'min:0'],
             'balance_days' => ['required', 'numeric', 'min:0'],
 
-            'available_at' => ['required', 'date'],
-            'expired_at' => ['required', 'date'],
+            // 'available_at' => ['required', 'date'],
+            // 'expired_at' => ['required', 'date'],
         ];
     }
 }
