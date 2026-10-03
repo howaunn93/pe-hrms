@@ -165,7 +165,7 @@ class ClaimHeaderControllerFE extends Controller
 
                 Password::deleteToken($user);
 
-                if ($request->approve)
+                if (!$claim_header->claimItems()->where('manager_approved', StatusCodeConstants::INACTIVE)->exists())
                 {
                     $directors = User::whereHas('employment', function ($query) {
                         $query->where('is_director', '=', StatusCodeConstants::ACTIVE);
@@ -196,6 +196,10 @@ class ClaimHeaderControllerFE extends Controller
 
                         Mail::to($director->email)->send(new ClaimApplicationMail($data));
                     }
+                }
+                else
+                {
+                    $this->sendApplicantEmail($claim_header, 'manager');
                 }
             }
             else
@@ -241,8 +245,11 @@ class ClaimHeaderControllerFE extends Controller
             ->count();
     }
 
-    private function sendApplicantEmail($claim_header)
+    private function sendApplicantEmail($claim_header, $type = 'director')
     {
+        $is_rejected = $claim_header->claimItems()->where('manager_approved', StatusCodeConstants::INACTIVE)->exists()
+            || ($type == 'director' && $claim_header->claimItems()->where('director_approved', StatusCodeConstants::INACTIVE)->exists());
+
         $accountants = User::whereHas('employment', function ($query) {
             $query->where('is_accountant', '=', StatusCodeConstants::ACTIVE);
         })
@@ -255,9 +262,9 @@ class ClaimHeaderControllerFE extends Controller
             'applicant_email' => $claim_header->user->email,
             'applicant_phone_number' => $claim_header->user->contact?->phone_number,
             'submitted_at' => self::currentDateTime()->format('Y-m-d h:i:s A'),
-            'subject' => 'PE Portal - Claim Reviewed',
-            'title' => 'Claim Reviewed',
-            'status_text' => 'reviewed',
+            'subject' => $is_rejected ? 'PE Portal - Claim Rejected' : 'PE Portal - Claim Approved',
+            'title' => $is_rejected ? 'Claim Rejected' : 'Claim Approved',
+            'status_text' => $is_rejected ? 'rejected' : 'approved',
             'footer_message' => 'Please log in to PE Portal to view the claim application.',
             'claim_header' => $claim_header,
             'claim_items' => $claim_header->claimItems()->get(),
@@ -266,6 +273,13 @@ class ClaimHeaderControllerFE extends Controller
             'is_applicant_notification' => true,
         ];
 
-        Mail::to($claim_header->user->email)->cc($accountants->pluck('email')->filter()->values()->toArray())->send(new ClaimApplicationMail($data));
+        if ($is_rejected)
+        {
+            Mail::to($claim_header->user->email)->send(new ClaimApplicationMail($data));
+        }
+        else
+        {
+            Mail::to($claim_header->user->email)->cc($accountants->pluck('email')->filter()->values()->toArray())->send(new ClaimApplicationMail($data));
+        }
     }
 }

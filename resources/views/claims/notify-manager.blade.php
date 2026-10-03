@@ -77,7 +77,7 @@
 
                         <p style="margin: 0 0 24px 0; font-size: 16px; line-height: 1.6;">
                             @if(isset($data['is_applicant_notification']) && $data['is_applicant_notification'])
-                                Your claim application has been reviewed. Please refer to the claim item status below.
+                                Your claim application has been {{ $data['status_text'] ?? 'reviewed' }}. Please refer to the claim item status below.
                             @else
                                 A claim application has been submitted by <strong>{{ $data['applicant_name'] }}</strong> ({{ $data['applicant_email'] }}{{ $data['applicant_phone_number'] ? ', ' . $data['applicant_phone_number'] : '' }}) and is {{ $data['status_text'] ?? 'pending your approval' }}.
                             @endif

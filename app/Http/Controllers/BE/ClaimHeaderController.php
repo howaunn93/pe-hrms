@@ -415,39 +415,47 @@ class ClaimHeaderController extends Controller
                 'updated_at' => self::currentDateTime(),
             ]);
 
-            $directors = User::whereHas('employment', function ($query) {
-                $query->where('is_director', '=', StatusCodeConstants::ACTIVE);
-            })
-                ->where('is_active', StatusCodeConstants::ACTIVE)
-                ->get();
-
-            if ($directors->isNotEmpty())
+            if ($claim_header->claimItems()->where('manager_approved', StatusCodeConstants::INACTIVE)->exists())
             {
-                foreach($directors as $director)
-                {
-                    Password::deleteToken($director);
-
-                    $token = Password::createToken($director);
-
-                    $data = [
-                        'name' => trim(($director->personal?->first_name ?? '') . ' ' . ($director->personal?->last_name ?? '')) ?: $director->email,
-                        'applicant_name' => trim(($claim_header->user->personal?->first_name ?? '') . ' ' . ($claim_header->user->personal?->last_name ?? '')) ?: $claim_header->user->email,
-                        'applicant_email' => $claim_header->user->email,
-                        'applicant_phone_number' => $claim_header->user->contact?->phone_number,
-                        'submitted_at' => self::currentDateTime()->format('Y-m-d h:i:s A'),
-                        'subject' => 'PE Portal - Claim Pending Director Approval',
-                        'title' => 'Claim Pending Director Approval',
-                        'claim_header' => $claim_header,
-                        'claim_items' => $claim_header->claimItems()->get(),
-                        'total_amount' => $claim_header->total_amount,
-                        'action_url' => url('/claim-header-review?token=' . $token . '&email=' . urlencode($director->email) . '&claim_header_uuid=' . $claim_header->uuid . '&type=director'),
-                        'action_label' => 'Review Claim',
-                    ];
-
-                    Mail::to($director->email)->send(new ClaimApplicationMail($data));
-                }
+                $this->sendApplicantEmail($claim_header, 'manager');
             }
+            else
+            {
+                $directors = User::whereHas('employment', function ($query) {
+                    $query->where('is_director', '=', StatusCodeConstants::ACTIVE);
+                })
+                    ->where('is_active', StatusCodeConstants::ACTIVE)
+                    ->get();
+
+                if ($directors->isNotEmpty())
+                {
+                    foreach($directors as $director)
+                    {
+                        Password::deleteToken($director);
+
+                        $token = Password::createToken($director);
+
+                        $data = [
+                            'name' => trim(($director->personal?->first_name ?? '') . ' ' . ($director->personal?->last_name ?? '')) ?: $director->email,
+                            'applicant_name' => trim(($claim_header->user->personal?->first_name ?? '') . ' ' . ($claim_header->user->personal?->last_name ?? '')) ?: $claim_header->user->email,
+                            'applicant_email' => $claim_header->user->email,
+                            'applicant_phone_number' => $claim_header->user->contact?->phone_number,
+                            'submitted_at' => self::currentDateTime()->format('Y-m-d h:i:s A'),
+                            'subject' => 'PE Portal - Claim Pending Director Approval',
+                            'title' => 'Claim Pending Director Approval',
+                            'claim_header' => $claim_header,
+                            'claim_items' => $claim_header->claimItems()->get(),
+                            'total_amount' => $claim_header->total_amount,
+                            'action_url' => url('/claim-header-review?token=' . $token . '&email=' . urlencode($director->email) . '&claim_header_uuid=' . $claim_header->uuid . '&type=director'),
+                            'action_label' => 'Review Claim',
+                        ];
+
+                        Mail::to($director->email)->send(new ClaimApplicationMail($data));
+                    }
+                }
             
+            }
+
             $claim_header->load([
                 'user.personal',
                 'user.contact',
@@ -554,8 +562,11 @@ class ClaimHeaderController extends Controller
         return self::response(new ClaimHeaderResource($claim_header));
     }
 
-    private function sendApplicantEmail($claim_header)
+    private function sendApplicantEmail($claim_header, $type = 'director')
     {
+        $is_rejected = $claim_header->claimItems()->where('manager_approved', StatusCodeConstants::INACTIVE)->exists()
+            || ($type == 'director' && $claim_header->claimItems()->where('director_approved', StatusCodeConstants::INACTIVE)->exists());
+
         $accountants = User::whereHas('employment', function ($query) {
             $query->where('is_accountant', '=', StatusCodeConstants::ACTIVE);
         })
@@ -568,9 +579,9 @@ class ClaimHeaderController extends Controller
             'applicant_email' => $claim_header->user->email,
             'applicant_phone_number' => $claim_header->user->contact?->phone_number,
             'submitted_at' => self::currentDateTime()->format('Y-m-d h:i:s A'),
-            'subject' => 'PE Portal - Claim Reviewed',
-            'title' => 'Claim Reviewed',
-            'status_text' => 'reviewed',
+            'subject' => $is_rejected ? 'PE Portal - Claim Rejected' : 'PE Portal - Claim Approved',
+            'title' => $is_rejected ? 'Claim Rejected' : 'Claim Approved',
+            'status_text' => $is_rejected ? 'rejected' : 'approved',
             'footer_message' => 'Please log in to PE Portal to view the claim application.',
             'claim_header' => $claim_header,
             'claim_items' => $claim_header->claimItems()->get(),
@@ -579,7 +590,14 @@ class ClaimHeaderController extends Controller
             'is_applicant_notification' => true,
         ];
 
-        Mail::to($claim_header->user->email)->cc($accountants->pluck('email')->filter()->values()->toArray())->send(new ClaimApplicationMail($data));
+        if ($is_rejected)
+        {
+            Mail::to($claim_header->user->email)->send(new ClaimApplicationMail($data));
+        }
+        else
+        {
+            Mail::to($claim_header->user->email)->cc($accountants->pluck('email')->filter()->values()->toArray())->send(new ClaimApplicationMail($data));
+        }
     }
 
     public function exportExcel(ClaimHeaderIndexRequest $request)
