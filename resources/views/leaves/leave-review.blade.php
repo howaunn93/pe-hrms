@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PE Portal - Leave Review</title>
-<link rel="icon" href="https://www.petro-excel.com.my/wp-content/uploads/2018/09/Oil-Drop-Out-line-e1736841035299.png" type="image/png">
+<link rel="icon" href="{{ url('images/petro-excel-logo-no-bg.png') }}" type="image/png">
 
 <style>
     body { margin: 0; padding: 0; background-color: #eef1f5; font-family: Arial, sans-serif; }
@@ -35,7 +35,7 @@
 <div class="wrapper">
     <div class="container">
         <div class="header">
-            <img src="https://www.petro-excel.com.my/wp-content/uploads/2018/09/Oil-Drop-Out-line-e1736841035299.png">
+            <img src="{{ url('images/petro-excel-logo-no-bg.png') }}">
             <div class="header-title">Petro-Excel Sdn Bhd</div>
         </div>
 

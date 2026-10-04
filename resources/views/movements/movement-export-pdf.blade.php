@@ -123,7 +123,7 @@
 <table class="header-table">
     <tr>
         <td style="width: 58px;">
-            <img src="https://www.petro-excel.com.my/wp-content/uploads/2018/09/Oil-Drop-Out-line-e1736841035299.png" width="46">
+            <img src="{{ url('images/petro-excel-logo-no-bg.png') }}" width="46">
         </td>
         <td>
             <div class="company">Petro-Excel Sdn Bhd</div>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="icon" href="https://www.petro-excel.com.my/wp-content/uploads/2018/09/Oil-Drop-Out-line-e1736841035299.png" type="image/png">
+<link rel="icon" href="{{ url('images/petro-excel-logo-no-bg.png') }}" type="image/png">
 <title>{{ $data['subject'] }}</title>
 </head>
 <body style="margin:0; padding:0; background-color:#eef1f5; font-family: Arial, sans-serif;">
@@ -13,7 +13,7 @@
             <table cellpadding="0" cellspacing="0" style="width:100%; max-width:600px; background:#ffffff; border-radius:8px; overflow:hidden; border:1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
                 <tr>
                     <td align="center" style="padding:32px 0 20px 0;">
-                        <img src="https://www.petro-excel.com.my/wp-content/uploads/2018/09/Oil-Drop-Out-line-e1736841035299.png" width="50">
+                        <img src="{{ url('images/petro-excel-logo-no-bg.png') }}" width="50">
                         <div style="font-size:22px; font-weight:700; color:#111827; margin-top:12px;">Petro-Excel Sdn Bhd</div>
                     </td>
                 </tr>

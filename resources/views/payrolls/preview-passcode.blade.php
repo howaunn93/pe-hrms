@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PE Portal - Payroll Preview</title>
-<link rel="icon" href="https://www.petro-excel.com.my/wp-content/uploads/2018/09/Oil-Drop-Out-line-e1736841035299.png" type="image/png">
+<link rel="icon" href="{{ url('images/petro-excel-logo-no-bg.png') }}" type="image/png">
 <style>
     body { margin: 0; padding: 0; background-color: #eef1f5; font-family: Arial, sans-serif; }
     .wrapper { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 10px; }
@@ -34,7 +34,7 @@
 <div class="wrapper">
     <div class="container">
         <div class="header">
-            <img src="https://www.petro-excel.com.my/wp-content/uploads/2018/09/Oil-Drop-Out-line-e1736841035299.png">
+            <img src="{{ url('images/petro-excel-logo-no-bg.png') }}">
             <div class="header-title">Petro-Excel Sdn Bhd</div>
         </div>
         <div class="divider"></div>
