@@ -11,15 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_certificates', function (Blueprint $table) {
+        Schema::create('user_medical_certificates', function (Blueprint $table) {
             $table->id();
             $table->uuid('uuid')->unique();
             $table->unsignedBigInteger('user_id');
             $table->string('name')->nullable();
-            $table->string('organization')->nullable();
             $table->text('description')->nullable();
-            $table->date('date_applied')->nullable();
-            $table->date('valid_until')->nullable();
+            $table->date('date')->nullable();
             $table->string('attachment_path')->nullable();
             $table->string('attachment_name')->nullable();
             $table->boolean('is_active')->default(1);
@@ -31,8 +29,8 @@ return new class extends Migration
             // index
             $table->index('name');
             $table->index('is_active');
-
-            // foreign key
+            
+            // foreign keys
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
@@ -42,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_certificates');
+        Schema::dropIfExists('user_medical_certificates');
     }
 };

@@ -40,6 +40,7 @@ class UserController extends Controller
             'employment.position',
             'emergency',
             'certificates',
+            'medicalCertificates',
             'roles.permissions',
             'roles' => function ($query) {
                 $query->where('is_active', StatusCodeConstants::ACTIVE);  
@@ -147,8 +148,6 @@ class UserController extends Controller
                 ]);
             }
 
-            $user_employment = null;
-
             // create employment
             if ($request->has('employment') && $request->input('employment'))
             {
@@ -175,7 +174,7 @@ class UserController extends Controller
                     $department = Department::findByUuid($request->input('employment.department_uuid'), false);
                 }
 
-                $user_employment = $user->employment()->create([
+                $user->employment()->create([
                     'uuid' => self::uuid(),
                     'user_id' => $user->id,
                     'position_id' => $position?->id,
@@ -195,7 +194,7 @@ class UserController extends Controller
 
             LeaveModuleHelpers::userLeaveEntitlementCheck($user->uuid);
 
-            $user->load(['personal', 'employment', 'contact', 'emergency', 'certificates', 'roles.permissions']);
+            $user->load(['personal', 'employment', 'contact', 'emergency', 'certificates', 'medicalCertificates', 'roles.permissions']);
 
             DB::commit();
 
@@ -398,7 +397,7 @@ class UserController extends Controller
                 }
             }
 
-            $user->load(['personal', 'employment', 'contact', 'emergency', 'certificates', 'roles.permissions']);
+            $user->load(['personal', 'employment', 'contact', 'emergency', 'certificates', 'medicalCertificates', 'roles.permissions']);
 
             DB::commit();
 

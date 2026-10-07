@@ -27,6 +27,7 @@ class UserResource extends JsonResource
             'contact' => new UserContactResource($this->whenLoaded('contact')),
             'employment' => new UserEmploymentResource($this->whenLoaded('employment')),
             'certificates' => UserCertificateResource::collection($this->whenLoaded('certificates')),
+            'medical_certificates' => UserMedicalCertificateResource::collection($this->whenLoaded('medicalCertificates')),
             'emergency' => new UserEmergencyResource($this->whenLoaded('emergency')),
             'roles' => RoleResource::collection($this->whenLoaded('roles')),
             'leave_entitlements' => LeaveEntitlementResource::collection($this->whenLoaded('leaveEntitlements')),

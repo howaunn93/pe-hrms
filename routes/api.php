@@ -23,6 +23,7 @@ use App\Http\Controllers\BE\PositionController;
 use App\Http\Controllers\BE\RequestLogController;
 use App\Http\Controllers\BE\UpcomingEventController;
 use App\Http\Controllers\BE\UserCertificateController;
+use App\Http\Controllers\BE\UserMedicalCertificateController;
 use App\Http\Controllers\BE\UserContactController;
 use App\Http\Controllers\BE\UserController;
 use App\Http\Controllers\BE\UserEmergencyController;
@@ -123,6 +124,14 @@ Route::group([
             Route::get('/{uuid}', [UserCertificateController::class, 'show']);
             Route::put('/{uuid}', [UserCertificateController::class, 'update']);
             Route::patch('/{uuid}', [UserCertificateController::class, 'updateStatus']);
+        });
+
+        Route::prefix('user-medical-certificates')->group(function () {
+            Route::get('/', [UserMedicalCertificateController::class, 'index']);
+            Route::post('/', [UserMedicalCertificateController::class, 'store']);
+            Route::get('/{uuid}', [UserMedicalCertificateController::class, 'show']);
+            Route::put('/{uuid}', [UserMedicalCertificateController::class, 'update']);
+            Route::patch('/{uuid}', [UserMedicalCertificateController::class, 'updateStatus']);
         });
 
         Route::prefix('roles')->group(function () {

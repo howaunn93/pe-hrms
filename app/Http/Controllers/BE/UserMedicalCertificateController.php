@@ -5,18 +5,18 @@ namespace App\Http\Controllers\BE;
 use App\Constants\StatusCodeConstants;
 use App\Filters\UserFilter;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\UserCertificateShowRequest;
-use App\Http\Requests\UserCertificateStoreRequest;
-use App\Http\Requests\UserCertificateUpdateRequest;
-use App\Http\Requests\UserCertificateUpdateStatusRequest;
+use App\Http\Requests\UserMedicalCertificateShowRequest;
+use App\Http\Requests\UserMedicalCertificateStoreRequest;
+use App\Http\Requests\UserMedicalCertificateUpdateRequest;
+use App\Http\Requests\UserMedicalCertificateUpdateStatusRequest;
 use App\Http\Requests\UserIndexRequest;
-use App\Http\Resources\UserCertificateResource;
+use App\Http\Resources\UserMedicalCertificateResource;
 use App\Http\Resources\UserResource;
 use App\Models\User;
-use App\Models\UserCertificate;
+use App\Models\UserMedicalCertificate;
 use Illuminate\Support\Facades\DB;
 
-class UserCertificateController extends Controller
+class UserMedicalCertificateController extends Controller
 {
     public function __construct(private UserFilter $user_filter)
     {
@@ -44,7 +44,7 @@ class UserCertificateController extends Controller
         return self::responsePaginated(UserResource::collection($user), $user);
     }
 
-    public function store(UserCertificateStoreRequest $request)
+    public function store(UserMedicalCertificateStoreRequest $request)
     {
         $user = User::findByUuid($request->user_uuid);
 
@@ -60,19 +60,17 @@ class UserCertificateController extends Controller
 
                 $filename = time() . '_' . self::uuid() . '.' . $file->getClientOriginalExtension();
 
-                $attachment_path = $file->storeAs('user-certificates', $filename, 'public');
+                $attachment_path = $file->storeAs('user-medical-certificates', $filename, 'public');
 
                 $attachment_name = $file->getClientOriginalName();
             }
 
-            $user_certificate = UserCertificate::create([
+            $user_medical_certificate = UserMedicalCertificate::create([
                 'uuid' => self::uuid(),
                 'user_id' => $user->id,
                 'name' => $request->name,
-                'organization' => $request->organization,
                 'description' => $request->description,
-                'date_applied' => $request->date_applied,
-                'valid_until' => $request->valid_until,
+                'date' => $request->date,
                 'attachment_path' => $attachment_path,
                 'attachment_name' => $attachment_name,
                 'is_active' => StatusCodeConstants::ACTIVE,
@@ -82,7 +80,7 @@ class UserCertificateController extends Controller
                 'updated_at' => self::currentDateTime(),
             ]);
 
-            $user_certificate->load([
+            $user_medical_certificate->load([
                 'user.personal',
                 'user.contact',
                 'user.employment.office',
@@ -93,7 +91,7 @@ class UserCertificateController extends Controller
 
             DB::commit();
 
-            return self::response(new UserCertificateResource($user_certificate));
+            return self::response(new UserMedicalCertificateResource($user_medical_certificate));
 
         } catch (\Exception $exception) {
             DB::rollback();
@@ -101,9 +99,9 @@ class UserCertificateController extends Controller
         }
     }
 
-    public function update(UserCertificateUpdateRequest $request, string $uuid)
+    public function update(UserMedicalCertificateUpdateRequest $request, string $uuid)
     {
-        $user_certificate = UserCertificate::findByUuid($uuid);
+        $user_medical_certificate = UserMedicalCertificate::findByUuid($uuid);
 
         DB::beginTransaction();
 
@@ -117,26 +115,24 @@ class UserCertificateController extends Controller
 
                 $filename = time() . '_' . self::uuid() . '.' . $file->getClientOriginalExtension();
 
-                $attachment_path = $file->storeAs('user-certificates', $filename, 'public');
+                $attachment_path = $file->storeAs('user-medical-certificates', $filename, 'public');
 
                 $attachment_name = $file->getClientOriginalName();
             }
 
-            $user_certificate->update([
-                'user_id' => $user_certificate->user_id,
+            $user_medical_certificate->update([
+                'user_id' => $user_medical_certificate->user_id,
                 'name' => $request->name,
-                'organization' => $request->organization,
                 'description' => $request->description,
-                'date_applied' => $request->date_applied,
-                'valid_until' => $request->valid_until,
-                'attachment_path' => $attachment_path ? $attachment_path : $user_certificate->attachment_path,
-                'attachment_name' => $attachment_name ? $attachment_name : $user_certificate->attachment_name,
+                'date' => $request->date,
+                'attachment_path' => $attachment_path ? $attachment_path : $user_medical_certificate->attachment_path,
+                'attachment_name' => $attachment_name ? $attachment_name : $user_medical_certificate->attachment_name,
                 'is_active' => StatusCodeConstants::ACTIVE,
                 'updated_by' => self::auth()->uuid,
                 'updated_at' => self::currentDateTime(),
             ]);
 
-            $user_certificate->load([
+            $user_medical_certificate->load([
                 'user.personal',
                 'user.contact',
                 'user.employment.office',
@@ -147,7 +143,7 @@ class UserCertificateController extends Controller
 
             DB::commit();
 
-            return self::response(new UserCertificateResource($user_certificate));
+            return self::response(new UserMedicalCertificateResource($user_medical_certificate));
 
         } catch (\Exception $exception) {
             DB::rollback();
@@ -155,17 +151,17 @@ class UserCertificateController extends Controller
         }
     }
 
-    public function updateStatus(UserCertificateUpdateStatusRequest $request, string $uuid)
+    public function updateStatus(UserMedicalCertificateUpdateStatusRequest $request, string $uuid)
     {
-        $user_certificate = UserCertificate::findByUuid($uuid);
+        $user_medical_certificate = UserMedicalCertificate::findByUuid($uuid);
 
-        $user_certificate->update([
+        $user_medical_certificate->update([
             'is_active' => $request->is_active ? StatusCodeConstants::ACTIVE : StatusCodeConstants::INACTIVE,
             'updated_by' => self::auth()->uuid,
             'updated_at' => self::currentDateTime(),
         ]);
 
-        $user_certificate->load([
+        $user_medical_certificate->load([
             'user.personal',
             'user.contact',
             'user.employment.office',
@@ -174,12 +170,12 @@ class UserCertificateController extends Controller
             'user.emergency',
         ]);
 
-        return self::response(new UserCertificateResource($user_certificate));
+        return self::response(new UserMedicalCertificateResource($user_medical_certificate));
     }
 
-    public function show(UserCertificateShowRequest $request, string $uuid)
+    public function show(UserMedicalCertificateShowRequest $request, string $uuid)
     {
-        $user_certificate = UserCertificate::with([
+        $user_medical_certificate = UserMedicalCertificate::with([
             'user.personal',
             'user.contact',
             'user.employment.office',
@@ -188,6 +184,6 @@ class UserCertificateController extends Controller
             'user.emergency',
         ])->where('uuid', $uuid)->active()->firstOrFail();
 
-        return self::response(new UserCertificateResource($user_certificate));
+        return self::response(new UserMedicalCertificateResource($user_medical_certificate));
     }
 }

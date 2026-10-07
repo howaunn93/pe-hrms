@@ -91,6 +91,7 @@ class User extends Authenticatable
             'employment.position',
             'emergency',
             'certificates',
+            'medicalCertificates',
             'roles.permissions',
             'roles' => function ($query) {
                 $query->where('is_active', StatusCodeConstants::ACTIVE);
@@ -136,6 +137,11 @@ class User extends Authenticatable
     public function certificates()
     {
         return $this->hasMany(UserCertificate::class, 'user_id', 'id')->active();
+    }
+
+    public function medicalCertificates()
+    {
+        return $this->hasMany(UserMedicalCertificate::class, 'user_id', 'id')->active();
     }
 
     public function leaveEntitlements()
