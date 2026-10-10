@@ -14,7 +14,7 @@ class UserEmployment extends Model
     protected $table = 'user_employments';
     public $timestamps = false;
     public $casts = [
-        'joined_date' => 'date:Y-m-d',
+        // 'joined_date' => 'date:Y-m-d',
         'is_director' => 'boolean',
         'is_manager' => 'boolean',
         'is_accountant' => 'boolean',

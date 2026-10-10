@@ -17,7 +17,7 @@ class UserEmploymentResource extends JsonResource
     {
         $data = [
             'uuid' => $this->uuid,
-            'joined_date' => $this->joined_date ? Carbon::parse($this->joined_date)->utc() : null,
+            'joined_date' => $this->joined_date,
             'is_director' => $this->is_director,
             'is_manager' => $this->is_manager,
             'is_accountant' => $this->is_accountant,
