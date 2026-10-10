@@ -21,6 +21,7 @@ class UserEmploymentResource extends JsonResource
             'is_director' => $this->is_director,
             'is_manager' => $this->is_manager,
             'is_accountant' => $this->is_accountant,
+            'is_dev' => $this->is_dev,
             'is_active' => $this->is_active,
             'created_by' => $this->created_by,
             'created_at' => Carbon::parse($this->created_at)->utc(),

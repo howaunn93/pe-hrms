@@ -22,6 +22,7 @@ return new class extends Migration
             $table->boolean('is_director')->default(0);
             $table->boolean('is_manager')->default(0);
             $table->boolean('is_accountant')->default(0);
+            $table->boolean('is_dev')->default(0);
             $table->boolean('is_active')->default(1);
             $table->string('created_by', 350);
             $table->dateTime('created_at', 6);
